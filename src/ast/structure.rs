@@ -1,7 +1,8 @@
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
 #[derive(Debug)]
 #[allow(dead_code)]
+#[derive(Clone)]
 pub enum Literal {
     Integer(i64),
     Float(f64),
@@ -10,6 +11,7 @@ pub enum Literal {
 
 #[derive(Debug)]
 #[allow(dead_code)]
+#[derive(Clone)]
 pub struct BinearyExpr {
     pub left: Expr,
     pub operator: String,
@@ -18,6 +20,7 @@ pub struct BinearyExpr {
 
 #[derive(Debug)]
 #[allow(dead_code)]
+#[derive(Clone)]
 pub struct FunctionCall {
     pub name: String,
     pub arguments: Vec<Expr>,
@@ -25,6 +28,7 @@ pub struct FunctionCall {
 
 #[derive(Debug)]
 #[allow(dead_code)]
+#[derive(Clone)]
 pub enum Expr {
     Literal(Literal),                // const representation
     Binary(Box<BinearyExpr>),        // binary op (1 + 1) representation
@@ -61,4 +65,9 @@ pub struct Function {
 #[allow(dead_code)]
 pub struct Programm {
     pub file: PathBuf,
+}
+
+#[derive(Debug)]
+pub struct SymbolTable {
+    pub var: HashMap<String, Expr>,
 }

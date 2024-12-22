@@ -2,4 +2,4 @@ int x = 42
 int y = x + 5
 print("Hello, world")
 if (y > 0)
-int w =      z + 0
+int w =     z + 0
