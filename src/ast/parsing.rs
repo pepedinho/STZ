@@ -4,6 +4,7 @@ use crate::ast::structure::SymbolTable;
 
 use super::structure::{BinearyExpr, Expr, FunctionCall, Literal, Programm, Stmt};
 
+//TODO: check if str type is realy a string like we already do for int
 fn parse_expr(expr: &str, type_key: Option<&str>, table: &SymbolTable) -> Result<Expr, String> {
     if let Some(key) = type_key {
         if key == "str" {
@@ -91,6 +92,7 @@ fn is_type_keyword(word: &str) -> bool {
     matches!(word, "int" | "float" | "str" | "bool")
 }
 
+//TODO: check if the variable exists for assignements like a = b if a or b is unknown return error
 fn parse_statement(line: &str, n: usize, table: &mut SymbolTable) -> Result<Option<Stmt>, String> {
     if let Some((type_key, rest)) = line.split_once(' ') {
         if is_type_keyword(type_key) {
