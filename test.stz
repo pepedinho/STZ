@@ -1,5 +1,6 @@
 int x = 42
 int y = x + 5
+y = w
 print("Hello, world")
 if (y > 0)
 int z = 1

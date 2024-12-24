@@ -5,41 +5,53 @@ use crate::ast::structure::SymbolTable;
 use super::structure::{BinearyExpr, Expr, FunctionCall, Literal, Programm, Stmt};
 
 //TODO: check if str type is realy a string like we already do for int
+
+fn parse_typed_expr(
+    expr: &str,
+    type_key: Option<&str>,
+    key: &str,
+    table: &SymbolTable,
+) -> Result<Expr, String> {
+    if key == "str" {
+        return Ok(Expr::Literal(Literal::Str(
+            expr[1..expr.len() - 1].to_string(),
+        )));
+    } else if key == "int" {
+        if expr.contains("+") || expr.contains("-") {
+            //binary expression
+            let parts: Vec<&str> = expr.split_whitespace().collect();
+            if parts.len() == 3 {
+                let left = match parse_expr(parts[0], type_key, table) {
+                    Ok(l) => l,
+                    Err(e) => return Err(e),
+                };
+                let right = match parse_expr(parts[2], type_key, table) {
+                    Ok(r) => r,
+                    Err(e) => return Err(e),
+                };
+                return Ok(Expr::Binary(Box::new(BinearyExpr {
+                    left,
+                    operator: parts[1].to_string(),
+                    right,
+                })));
+            }
+            return Ok(Expr::Variable(expr.to_string())); // default
+        }
+        if let Ok(i) = expr.parse::<i64>() {
+            return Ok(Expr::Literal(Literal::Integer(i)));
+        } else if let Some(value) = table.get_var(expr) {
+            return Ok(value.clone());
+        } else {
+            return Err(format!("Invalid type expected '{}' ! expr : {}", key, expr));
+        }
+    } else {
+        return Err(format!("unknown type key : '{}'!", key));
+    }
+}
+
 fn parse_expr(expr: &str, type_key: Option<&str>, table: &SymbolTable) -> Result<Expr, String> {
     if let Some(key) = type_key {
-        if key == "str" {
-            return Ok(Expr::Literal(Literal::Str(
-                expr[1..expr.len() - 1].to_string(),
-            )));
-        } else if key == "int" {
-            if expr.contains("+") || expr.contains("-") {
-                //binary expression
-                let parts: Vec<&str> = expr.split_whitespace().collect();
-                if parts.len() == 3 {
-                    let left = match parse_expr(parts[0], type_key, table) {
-                        Ok(l) => l,
-                        Err(e) => return Err(e),
-                    };
-                    let right = match parse_expr(parts[2], type_key, table) {
-                        Ok(r) => r,
-                        Err(e) => return Err(e),
-                    };
-                    return Ok(Expr::Binary(Box::new(BinearyExpr {
-                        left,
-                        operator: parts[1].to_string(),
-                        right,
-                    })));
-                }
-                return Ok(Expr::Variable(expr.to_string())); // default
-            }
-            if let Ok(i) = expr.parse::<i64>() {
-                return Ok(Expr::Literal(Literal::Integer(i)));
-            } else if let Some(value) = table.get_var(expr) {
-                return Ok(value.clone());
-            } else {
-                return Err(format!("Invalid type expected '{}' ! expr : {}", key, expr));
-            }
-        }
+        return parse_typed_expr(expr, type_key, key, table);
     }
     if expr.starts_with("\"") && expr.ends_with("\"") {
         // litteral String
@@ -84,7 +96,11 @@ fn parse_expr(expr: &str, type_key: Option<&str>, table: &SymbolTable) -> Result
         })))
     } else {
         // variable
-        Ok(Expr::Variable(expr.to_string()))
+        if let Some(_v) = table.get_var(expr) {
+            Ok(Expr::Variable(expr.to_string()))
+        } else {
+            Err(format!("unknown variable : {}", expr))
+        }
     }
 }
 
@@ -113,6 +129,25 @@ fn parse_statement(line: &str, n: usize, table: &mut SymbolTable) -> Result<Opti
                     }));
                 }
             }
+        }
+    }
+    if line.contains("=") {
+        let parts: Vec<&str> = line.split("=").map(str::trim).collect();
+        if parts.len() == 2 {
+            let _left = match parse_expr(parts[0], None, table) {
+                Ok(l) => l,
+                Err(e) => return Err(format!("line {}: {}", n, e)),
+            };
+            let right = match parse_expr(parts[1], None, table) {
+                Ok(r) => r,
+                Err(e) => return Err(format!("line {}: {}", n, e)),
+            };
+            table.set_var(parts[0].to_string(), &right);
+            return Ok(Some(Stmt::Assignment {
+                line: n,
+                name: parts[0].to_string(),
+                value: right,
+            }));
         }
     }
     if line.starts_with("if") {
